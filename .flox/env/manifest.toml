@@ -2,11 +2,27 @@ schema-version = "1.14.0"
 
 [install]
 python.pkg-path = "python312"
-python.outputs = "all"
-uv.pkg-path = "uv"
-uv.outputs = "all"
+# Published from .flox/pkgs/anthropic — the catalog's 0.75.0 lacks the 1.x
+# tool_runner/strict/effort/fallbacks surface this service is built on. Isolated
+# in its own pkg-group: resolving it alongside nixpkgs packages in 'toplevel'
+# fails with "constraints for group 'toplevel' are too tight".
+anthropic.pkg-path = "justin-flox/anthropic"
+anthropic.pkg-group = "sdk"
+anthropic.outputs = "all"
+fastapi.pkg-path = "python312Packages.fastapi"
+fastapi.outputs = "all"
+uvicorn.pkg-path = "python312Packages.uvicorn"
+uvicorn.outputs = "all"
+pydantic-settings.pkg-path = "python312Packages.pydantic-settings"
+pydantic-settings.outputs = "all"
+psycopg.pkg-path = "python312Packages.psycopg"
+psycopg.outputs = "all"
+psycopg-pool.pkg-path = "python312Packages.psycopg-pool"
+psycopg-pool.outputs = "all"
+# git shallow-clones the source repos; ripgrep is the retrieval tool.
+git.pkg-path = "git"
+git.outputs = "all"
 ripgrep.pkg-path = "ripgrep"
-ripgrep.outputs = "all"
 cloudflared.pkg-path = "cloudflared"
 
 [vars]
@@ -15,24 +31,6 @@ TRIAGE_MODEL = "claude-opus-5"
 
 [hook]
 on-activate = '''
-  venv="$FLOX_ENV_CACHE/venv"
-  export UV_CACHE_DIR="$FLOX_ENV_CACHE/uv-cache"
-
-  if [ ! -d "$venv" ]; then
-    uv venv "$venv" --python "$FLOX_ENV/bin/python3.12" --quiet
-  fi
-
-  stamp="$venv/.deps-$(shasum requirements.txt | cut -d' ' -f1)"
-  if [ ! -f "$stamp" ]; then
-    uv pip install --python "$venv/bin/python" --quiet -r requirements.txt
-    rm -f "$venv"/.deps-*
-    touch "$stamp"
-  fi
-
-  if [ -f "$venv/bin/activate" ]; then
-    source "$venv/bin/activate"
-  fi
-
   # Load .env, but let variables already set in the shell win — so
   # `POST_NOTES=true flox activate -- ...` overrides the file.
   if [ -f "$FLOX_ENV_PROJECT/.env" ]; then
@@ -50,11 +48,8 @@ on-activate = '''
 
 [profile]
 common = '''
-  serve() { uvicorn app.main:app --reload --port "${PORT:-8000}"; }
+  serve() { uvicorn app.main:app --reload --port "${PORT:-8787}"; }
 '''
 
 [options]
-systems = ["aarch64-darwin", "x86_64-darwin", "aarch64-linux", "x86_64-linux"]
-
-
-
+systems = ["aarch64-darwin"]
