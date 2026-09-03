@@ -87,6 +87,17 @@ async def lifespan(app: FastAPI):
         settings.doc_root_list() or "(none)",
     )
     log.info("source repos: %s", repos.heads() or "(none)")
+
+    # A search root that does not exist yields zero doc sources with no error —
+    # the failure mode looks like "retrieval is mediocre", not like a bug. This
+    # bit in production when DOC_ROOTS was imported from a laptop .env.
+    from pathlib import Path as _Path
+
+    missing = [r for r in settings.doc_root_list() if not _Path(r).is_dir()]
+    if missing:
+        log.error("SEARCH ROOTS DO NOT EXIST: %s — retrieval will find nothing", missing)
+    elif not settings.doc_root_list():
+        log.error("NO SEARCH ROOTS configured — retrieval will find nothing")
     yield
     _state["intercom"].close()
 
