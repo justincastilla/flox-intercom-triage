@@ -6,9 +6,16 @@ python.pkg-path = "python312"
 # tool_runner/strict/effort/fallbacks surface this service is built on. Isolated
 # in its own pkg-group: resolving it alongside nixpkgs packages in 'toplevel'
 # fails with "constraints for group 'toplevel' are too tight".
-anthropic.pkg-path = "justin-flox/anthropic"
-anthropic.pkg-group = "sdk"
-anthropic.outputs = "all"
+# Split per system: the darwin build was published from a laptop and the linux
+# build from CI, so they sit on different catalog pages and cannot resolve in one
+# group ("not found for all requested systems on the same page"). Each also needs
+# its own pkg-group — resolving alongside nixpkgs in 'toplevel' is too tight.
+anthropic-darwin.pkg-path = "justin-flox/anthropic"
+anthropic-darwin.pkg-group = "sdk-darwin"
+anthropic-darwin.systems = ["aarch64-darwin"]
+anthropic-linux.pkg-path = "justin-flox/anthropic"
+anthropic-linux.pkg-group = "sdk-linux"
+anthropic-linux.systems = ["x86_64-linux"]
 fastapi.pkg-path = "python312Packages.fastapi"
 fastapi.outputs = "all"
 uvicorn.pkg-path = "python312Packages.uvicorn"
@@ -52,4 +59,13 @@ common = '''
 '''
 
 [options]
-systems = ["aarch64-darwin"]
+systems = ["aarch64-darwin", "x86_64-linux"]
+
+
+# Runtime metadata baked into the image by `flox containerize`. The image carries
+# the environment only — app/ is added by a thin Dockerfile layer on top, so a
+# code change is a rebuild rather than a package republish.
+[containerize.config]
+exposed-ports = ["8080/tcp"]
+working-dir = "/app"
+cmd = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,0 +1,16 @@
+# Thin layer over the image produced by `flox containerize`.
+#
+# The Flox image carries the whole runtime — python 3.12, anthropic 1.3.0 from
+# the published catalog, fastapi, psycopg, git, ripgrep — and an entrypoint that
+# activates the environment. Only the application code is added here, so a code
+# change is a 3-second rebuild rather than a package republish.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+COPY app /app/app
+
+# REPO_DIR is cloned fresh on boot (~2s, 27MB); durable state lives in Postgres,
+# so the container needs no volume.
+ENV REPO_DIR=/app/repos \
+    GAP_REPORT_PATH=/app/repos/doc-gaps.md \
+    PYTHONUNBUFFERED=1

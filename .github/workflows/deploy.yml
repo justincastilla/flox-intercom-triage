@@ -1,0 +1,55 @@
+name: Deploy to Fly
+
+# Containerize must run on x86_64 Linux, not a laptop: on Apple Silicon
+# `flox containerize` builds inside an aarch64-linux proxy container, which is
+# neither in the lockfile nor the architecture Fly's shared-cpu-1x runs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".flox/env/manifest.toml"
+      - "Dockerfile.deploy"
+      - "fly.toml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fly
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FLOX_FLOXHUB_TOKEN: ${{ secrets.FLOX_FLOXHUB_TOKEN }}
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      IMAGE: registry.fly.io/flox-intercom-triage:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: flox/install-flox-action@v2
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Produces the environment image; app/ is layered on separately below.
+      - name: Containerize the Flox environment
+        run: |
+          flox containerize --tag ci -f - | docker load
+          docker images --format '{{.Repository}}:{{.Tag}}' | head -5
+
+      - name: Layer in the application code
+        run: |
+          BASE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep ':ci$' | head -1)
+          echo "base image: $BASE"
+          docker build --build-arg "BASE_IMAGE=$BASE" -t "$IMAGE" -f Dockerfile.deploy .
+
+      - name: Push and deploy
+        run: |
+          flyctl auth docker
+          docker push "$IMAGE"
+          flyctl deploy --image "$IMAGE" --wait-timeout 300
+
+      - name: Smoke check
+        run: curl -fsS --max-time 30 https://flox-intercom-triage.fly.dev/healthz

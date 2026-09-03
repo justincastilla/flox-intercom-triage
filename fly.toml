@@ -2,8 +2,6 @@
 app = "flox-intercom-triage"
 primary_region = "iad"          # close to Intercom's us-east webhook senders
 
-[build]
-
 [env]
   PORT = "8080"
   REPO_SYNC_MINUTES = "60"
@@ -27,3 +25,4 @@ primary_region = "iad"          # close to Intercom's us-east webhook senders
 [[vm]]
   size = "shared-cpu-1x"
   memory = "1gb"                # ripgrep over ~29MB of corpus plus the agent loop
+  cpu_kind = "shared"
