@@ -4,3 +4,4 @@ briefs.jsonl
 __pycache__/
 *.pyc
 intake_labels.json
+result-*
