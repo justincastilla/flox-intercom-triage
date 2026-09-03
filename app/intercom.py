@@ -197,3 +197,23 @@ def customer_fingerprint(conversation: dict) -> str:
     opening = strip_html((conversation.get("source") or {}).get("body"))
     parts = [opening, *customer_replies(conversation)]
     return hashlib.sha256("\n".join(parts).encode()).hexdigest()[:16]
+
+
+def teammate_has_replied(conversation: dict) -> bool:
+    """True once a human teammate has replied to the customer.
+
+    The whole premise of this service is to brief whoever picks a ticket up
+    *before* they start. Once someone has answered, a fresh AI note is noise at
+    best and contradicts them at worst — and the customer's follow-up messages
+    would otherwise keep re-triggering triage, since the fingerprint changes with
+    every new customer message.
+
+    Only `comment` parts authored by an `admin` count: our own output is a `note`,
+    and Operator/Fin auto-replies are authored by `bot`.
+    """
+    for part in (conversation.get("conversation_parts") or {}).get("conversation_parts", []):
+        if part.get("part_type") != "comment":
+            continue
+        if (part.get("author") or {}).get("type") == "admin":
+            return True
+    return False

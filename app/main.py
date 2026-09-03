@@ -18,6 +18,7 @@ from .intercom import (
     Intercom,
     awaiting_customer_detail,
     customer_fingerprint,
+    teammate_has_replied,
     verify_signature,
 )
 from .render import note_html
@@ -125,6 +126,14 @@ def run_triage(conversation_id: str) -> None:
             log.info(
                 "%s: opening is a Messenger intake selection, waiting for the "
                 "customer's question", conversation_id)
+            skipped = "awaiting_customer_detail"
+            return
+        if teammate_has_replied(conversation):
+            log.info(
+                "%s: a teammate has already replied, leaving it to them",
+                conversation_id,
+            )
+            skipped = "teammate_handling"
             return
         fingerprint = customer_fingerprint(conversation)
         if not _claim(conversation_id, fingerprint):
