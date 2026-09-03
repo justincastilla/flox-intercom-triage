@@ -24,6 +24,10 @@
         "pkg-path": "python312Packages.fastapi",
         "outputs": "all"
       },
+      "flyctl": {
+        "pkg-path": "flyctl",
+        "pkg-group": "tools"
+      },
       "git": {
         "pkg-path": "git",
         "outputs": "all"
@@ -738,6 +742,64 @@
       },
       "system": "x86_64-linux",
       "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "flyctl",
+      "broken": false,
+      "derivation": "/nix/store/mh9wiymnd5y3ypwazwz42hq6hykgkdl4-flyctl-0.4.87.drv",
+      "description": "Command line tools for fly.io services",
+      "install_id": "flyctl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
+      "name": "flyctl-0.4.87",
+      "pname": "flyctl",
+      "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
+      "rev_count": 1064949,
+      "rev_date": "2026-08-31T12:23:27Z",
+      "scrape_date": "2026-09-01T04:57:40.956609Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.4.87",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/hi7nd0n6wy9x096qkdiwabdbsmbi16rn-flyctl-0.4.87"
+      },
+      "system": "aarch64-darwin",
+      "group": "tools",
+      "priority": 5
+    },
+    {
+      "attr_path": "flyctl",
+      "broken": false,
+      "derivation": "/nix/store/hd31ghc0r3hkvv3rx6yy0zvi67v5f4xs-flyctl-0.4.87.drv",
+      "description": "Command line tools for fly.io services",
+      "install_id": "flyctl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
+      "name": "flyctl-0.4.87",
+      "pname": "flyctl",
+      "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
+      "rev_count": 1064949,
+      "rev_date": "2026-08-31T12:23:27Z",
+      "scrape_date": "2026-09-01T06:06:02.666332Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.4.87",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/i3fmynzb05jybbavgdwi6hbcvah8y1q6-flyctl-0.4.87"
+      },
+      "system": "x86_64-linux",
+      "group": "tools",
       "priority": 5
     }
   ]

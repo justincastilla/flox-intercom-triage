@@ -31,6 +31,10 @@ git.pkg-path = "git"
 git.outputs = "all"
 ripgrep.pkg-path = "ripgrep"
 cloudflared.pkg-path = "cloudflared"
+# Own group: in toplevel the resolver pins an old 0.3.x that lacks
+# secrets import, tokens create and postgres create.
+flyctl.pkg-path = "flyctl"
+flyctl.pkg-group = "tools"
 
 [vars]
 INTERCOM_API_BASE = "https://api.intercom.io"
@@ -69,3 +73,4 @@ systems = ["aarch64-darwin", "x86_64-linux"]
 exposed-ports = ["8080/tcp"]
 working-dir = "/app"
 cmd = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
