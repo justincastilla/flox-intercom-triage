@@ -1,0 +1,526 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "schema-version": "1.14.0",
+    "install": {
+      "cloudflared": {
+        "pkg-path": "cloudflared"
+      },
+      "python": {
+        "pkg-path": "python312",
+        "outputs": "all"
+      },
+      "ripgrep": {
+        "pkg-path": "ripgrep",
+        "outputs": "all"
+      },
+      "uv": {
+        "pkg-path": "uv",
+        "outputs": "all"
+      }
+    },
+    "vars": {
+      "INTERCOM_API_BASE": "https://api.intercom.io",
+      "TRIAGE_MODEL": "claude-opus-5"
+    },
+    "hook": {
+      "on-activate": "  venv=\"$FLOX_ENV_CACHE/venv\"\n  export UV_CACHE_DIR=\"$FLOX_ENV_CACHE/uv-cache\"\n\n  if [ ! -d \"$venv\" ]; then\n    uv venv \"$venv\" --python \"$FLOX_ENV/bin/python3.12\" --quiet\n  fi\n\n  stamp=\"$venv/.deps-$(shasum requirements.txt | cut -d' ' -f1)\"\n  if [ ! -f \"$stamp\" ]; then\n    uv pip install --python \"$venv/bin/python\" --quiet -r requirements.txt\n    rm -f \"$venv\"/.deps-*\n    touch \"$stamp\"\n  fi\n\n  if [ -f \"$venv/bin/activate\" ]; then\n    source \"$venv/bin/activate\"\n  fi\n\n  # Load .env, but let variables already set in the shell win — so\n  # `POST_NOTES=true flox activate -- ...` overrides the file.\n  if [ -f \"$FLOX_ENV_PROJECT/.env\" ]; then\n    while IFS= read -r line || [ -n \"$line\" ]; do\n      case \"$line\" in ''|'#'*) continue;; esac\n      key=${line%%=*}\n      case \"$key\" in *[!A-Za-z0-9_]*) continue;; esac\n      eval \"existing=\\${$key+set}\"\n      [ -n \"${existing:-}\" ] || export \"$key=${line#*=}\"\n    done < \"$FLOX_ENV_PROJECT/.env\"\n  fi\n\n  cd \"$FLOX_ENV_PROJECT\"\n"
+    },
+    "profile": {
+      "common": "  serve() { uvicorn app.main:app --reload --port \"${PORT:-8000}\"; }\n"
+    },
+    "options": {
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-darwin",
+        "aarch64-linux",
+        "x86_64-linux"
+      ]
+    }
+  },
+  "packages": [
+    {
+      "attr_path": "cloudflared",
+      "broken": false,
+      "derivation": "/nix/store/ll5j65bhq11f083vsbpr3m7f1aw94555-cloudflared-2026.6.1.drv",
+      "description": "Client for various Cloudflare services, including Tunnel, Access, and DNS over HTTPS",
+      "install_id": "cloudflared",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "cloudflared-2026.6.1",
+      "pname": "cloudflared",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:12:55.168829Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2026.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/6h45b81cy4bgbyxa1rwcq1ml17r0bhwr-cloudflared-2026.6.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cloudflared",
+      "broken": false,
+      "derivation": "/nix/store/0a287y4r7qinpcziby69fq1gk5rhn6rc-cloudflared-2026.6.1.drv",
+      "description": "Client for various Cloudflare services, including Tunnel, Access, and DNS over HTTPS",
+      "install_id": "cloudflared",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "cloudflared-2026.6.1",
+      "pname": "cloudflared",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:41:21.803612Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2026.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/yirqybsphq01kdn8lz4d7zymbsjr9z1z-cloudflared-2026.6.1"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cloudflared",
+      "broken": false,
+      "derivation": "/nix/store/ar6h4gbblmfsbqaixi2x8ka3nn6kmidv-cloudflared-2026.6.1.drv",
+      "description": "Client for various Cloudflare services, including Tunnel, Access, and DNS over HTTPS",
+      "install_id": "cloudflared",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "cloudflared-2026.6.1",
+      "pname": "cloudflared",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:09:00.538975Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2026.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/x2qdj4i5w5zzngb1asbxll9wc5sm0x38-cloudflared-2026.6.1"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "cloudflared",
+      "broken": false,
+      "derivation": "/nix/store/96ljw2gqjww504hx1vkb09wpcg1phjm1-cloudflared-2026.6.1.drv",
+      "description": "Client for various Cloudflare services, including Tunnel, Access, and DNS over HTTPS",
+      "install_id": "cloudflared",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "cloudflared-2026.6.1",
+      "pname": "cloudflared",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:40:24.449615Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2026.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/lx743whrf1bpfyyjvxx24jfhzrysgg29-cloudflared-2026.6.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312",
+      "broken": false,
+      "derivation": "/nix/store/0scvydzrq1fwrd2g6qkxzwhfr74jb5bi-python3-3.12.13.drv",
+      "description": "High-level dynamically-typed programming language",
+      "install_id": "python",
+      "license": "Python-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "python3-3.12.13",
+      "pname": "python312",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:13:37.152128Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "python3-3.12.13",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/65p6ipj712fb5igr9w1h5k5cb7bymj42-python3-3.12.13"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312",
+      "broken": false,
+      "derivation": "/nix/store/yyqr2z480r6c13skh5afgksphr2lfzdp-python3-3.12.13.drv",
+      "description": "High-level dynamically-typed programming language",
+      "install_id": "python",
+      "license": "Python-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "python3-3.12.13",
+      "pname": "python312",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:42:22.928415Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "python3-3.12.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/flj97zlvj6lz384brw7r5xa8hfmqbp2q-python3-3.12.13-debug",
+        "out": "/nix/store/wicbzqr46qxkh8nv4191fx8jdjrhya3i-python3-3.12.13"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312",
+      "broken": false,
+      "derivation": "/nix/store/yli627mjkh5nykx1hv2yi5dnwh2n1692-python3-3.12.13.drv",
+      "description": "High-level dynamically-typed programming language",
+      "install_id": "python",
+      "license": "Python-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "python3-3.12.13",
+      "pname": "python312",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:09:53.026944Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "python3-3.12.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/afd3xzw8afbbr1dsqjvb6xg2a5gah4vg-python3-3.12.13"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "python312",
+      "broken": false,
+      "derivation": "/nix/store/39fqik436whzb2vs7xckk644zmc65fwg-python3-3.12.13.drv",
+      "description": "High-level dynamically-typed programming language",
+      "install_id": "python",
+      "license": "Python-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "python3-3.12.13",
+      "pname": "python312",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:41:29.493823Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "python3-3.12.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/sk5vgw3w0g8j9x0r261piqjczmgvqbb6-python3-3.12.13-debug",
+        "out": "/nix/store/d69yn2v7lzyh29rykj0ldnih67xps5s0-python3-3.12.13"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/4h6fwzsa2cwxsvik56m1wwc56xqsiz5k-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:14:28.294597Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/h5fzp9vb16p8z3ha51hhx37rqjh4l81z-ripgrep-15.1.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/4726g15rqaqd354q47ghwfv87f7yiq19-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:43:24.548100Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/9rl3qy5akdkgmcsh6c5f2wy3x8cky4w0-ripgrep-15.1.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/947diy7smyw7x4wwgxg4zwbvickv014v-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:10:56.501240Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/anpnnwglxciyg2brq503b2amkdq1wfw8-ripgrep-15.1.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/0jbhn2chcn27x4yayqnyihg6cvili005-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:42:35.616404Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/4w7fshi3jlwjxsij52q4yyl4sfxvfl92-ripgrep-15.1.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "uv",
+      "broken": false,
+      "derivation": "/nix/store/czrpfss0v86ch66vdk3j22qndchnzw9b-uv-0.11.25.drv",
+      "description": "Extremely fast Python package installer and resolver, written in Rust",
+      "install_id": "uv",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "uv-0.11.25",
+      "pname": "uv",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:15:39.158658Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.11.25",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/f0kyi2i8xrfx7i405n5qy97kr0y5b2wv-uv-0.11.25"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "uv",
+      "broken": false,
+      "derivation": "/nix/store/c4na34nqxj1n2ivgjiprkm9p1lrahfgy-uv-0.11.25.drv",
+      "description": "Extremely fast Python package installer and resolver, written in Rust",
+      "install_id": "uv",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "uv-0.11.25",
+      "pname": "uv",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T03:44:48.957401Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.11.25",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/8qd81vygrwkvp8ndg3ihj9wq3pl97hfd-uv-0.11.25"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "uv",
+      "broken": false,
+      "derivation": "/nix/store/dlybxmsa3zfx8wbs9ccn0kafsq59qq6i-uv-0.11.25.drv",
+      "description": "Extremely fast Python package installer and resolver, written in Rust",
+      "install_id": "uv",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "uv-0.11.25",
+      "pname": "uv",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:12:23.334560Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.11.25",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/z4dcs3l0khfc2hky62bhy6v45lmysdvz-uv-0.11.25"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "uv",
+      "broken": false,
+      "derivation": "/nix/store/7qw31y4h8f29wc0f81jhm7wirnpdh8qf-uv-0.11.25.drv",
+      "description": "Extremely fast Python package installer and resolver, written in Rust",
+      "install_id": "uv",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=d407951447dcd00442e97087bf374aad70c04cea",
+      "name": "uv-0.11.25",
+      "pname": "uv",
+      "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+      "rev_count": 1027867,
+      "rev_date": "2026-07-05T04:06:12Z",
+      "scrape_date": "2026-07-06T04:44:10.521793Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.11.25",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/cgvijxnmydknslkl368k4j4j43akvl8b-uv-0.11.25"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}

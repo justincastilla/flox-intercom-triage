@@ -1,0 +1,29 @@
+# Fly.io deployment. Create with:  fly launch --no-deploy --copy-config
+app = "flox-intercom-triage"
+primary_region = "iad"          # close to Intercom's us-east webhook senders
+
+[build]
+
+[env]
+  PORT = "8080"
+  REPO_SYNC_MINUTES = "60"
+  POST_NOTES = "false"          # shadow mode; flip via `fly secrets` when ready
+  MIN_CONFIDENCE = "0.55"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Webhook deliveries must not wait on a cold start, and a triage run continues
+  # in a background task after the 200 — a stopped machine would drop it.
+  auto_stop_machines = false
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"                # ripgrep over ~29MB of corpus plus the agent loop

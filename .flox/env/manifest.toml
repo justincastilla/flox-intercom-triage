@@ -1,0 +1,60 @@
+schema-version = "1.14.0"
+
+[install]
+python.pkg-path = "python312"
+python.outputs = "all"
+uv.pkg-path = "uv"
+uv.outputs = "all"
+ripgrep.pkg-path = "ripgrep"
+ripgrep.outputs = "all"
+cloudflared.pkg-path = "cloudflared"
+
+[vars]
+INTERCOM_API_BASE = "https://api.intercom.io"
+TRIAGE_MODEL = "claude-opus-5"
+
+[hook]
+on-activate = '''
+  venv="$FLOX_ENV_CACHE/venv"
+  export UV_CACHE_DIR="$FLOX_ENV_CACHE/uv-cache"
+
+  if [ ! -d "$venv" ]; then
+    uv venv "$venv" --python "$FLOX_ENV/bin/python3.12" --quiet
+  fi
+
+  stamp="$venv/.deps-$(shasum requirements.txt | cut -d' ' -f1)"
+  if [ ! -f "$stamp" ]; then
+    uv pip install --python "$venv/bin/python" --quiet -r requirements.txt
+    rm -f "$venv"/.deps-*
+    touch "$stamp"
+  fi
+
+  if [ -f "$venv/bin/activate" ]; then
+    source "$venv/bin/activate"
+  fi
+
+  # Load .env, but let variables already set in the shell win — so
+  # `POST_NOTES=true flox activate -- ...` overrides the file.
+  if [ -f "$FLOX_ENV_PROJECT/.env" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in ''|'#'*) continue;; esac
+      key=${line%%=*}
+      case "$key" in *[!A-Za-z0-9_]*) continue;; esac
+      eval "existing=\${$key+set}"
+      [ -n "${existing:-}" ] || export "$key=${line#*=}"
+    done < "$FLOX_ENV_PROJECT/.env"
+  fi
+
+  cd "$FLOX_ENV_PROJECT"
+'''
+
+[profile]
+common = '''
+  serve() { uvicorn app.main:app --reload --port "${PORT:-8000}"; }
+'''
+
+[options]
+systems = ["aarch64-darwin", "x86_64-darwin", "aarch64-linux", "x86_64-linux"]
+
+
+

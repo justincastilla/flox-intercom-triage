@@ -1,0 +1,10 @@
+.flox/
+.git/
+.env
+briefs.jsonl
+doc-gaps.md
+intake_labels.json
+repos/
+__pycache__/
+*.pyc
+README.md
