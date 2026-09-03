@@ -1,0 +1,13 @@
+version = 1
+
+# Build-only environment for packages this project publishes to FloxHub.
+#
+# Deliberately separate from the service environment at the repo root: that one
+# *installs* justin-flox/anthropic, so CI on Linux could not activate it to build
+# the very package it is missing. Nothing is installed here — `flox build` only
+# needs the environment to lock.
+
+[install]
+
+[options]
+systems = ["aarch64-darwin", "x86_64-darwin", "aarch64-linux", "x86_64-linux"]

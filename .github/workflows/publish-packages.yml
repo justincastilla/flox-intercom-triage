@@ -1,0 +1,43 @@
+name: Publish packages to FloxHub
+
+# The service environment installs justin-flox/anthropic, which is built on the
+# machine that publishes it — so a macOS laptop only ever produces an
+# aarch64-darwin build. Fly runs Linux, so the Linux artifacts have to come from
+# a Linux runner. This publishes them.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packaging/.flox/pkgs/**"
+      - ".github/workflows/publish-packages.yml"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # A FloxHub token, stored as a repository secret. The Flox CLI reads this
+      # directly — there is no separate login step in CI.
+      FLOX_FLOXHUB_TOKEN: ${{ secrets.FLOX_FLOXHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # flox publish verifies the current commit is pushed to the remote and
+          # records it for provenance, so it needs real git history, not a
+          # detached shallow snapshot.
+          fetch-depth: 0
+
+      - uses: flox/install-flox-action@v2
+
+      # Built from packaging/, not the repo root: the root environment installs
+      # the package this job produces, so activating it here would require the
+      # Linux build to already exist.
+      - name: Build anthropic for x86_64-linux
+        run: flox build -d packaging anthropic
+
+      - name: Publish to FloxHub
+        run: flox publish -d packaging anthropic
+
+      - name: Confirm the published systems
+        run: flox show justin-flox/anthropic
