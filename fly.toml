@@ -1,28 +1,32 @@
-# Fly.io deployment. Create with:  fly launch --no-deploy --copy-config
-app = "flox-intercom-triage"
-primary_region = "iad"          # close to Intercom's us-east webhook senders
+# fly.toml app configuration file generated for flox-intercom-triage on 2026-09-03T16:17:19-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'flox-intercom-triage'
+primary_region = 'iad'
 
 [env]
-  PORT = "8080"
-  REPO_SYNC_MINUTES = "60"
-  POST_NOTES = "false"          # shadow mode; flip via `fly secrets` when ready
-  MIN_CONFIDENCE = "0.55"
+  MIN_CONFIDENCE = '0.55'
+  PORT = '8080'
+  POST_NOTES = 'false'
+  REPO_SYNC_MINUTES = '60'
 
 [http_service]
-  internal_port = 8080
+  internal_port = 8080          # must match the container's uvicorn port
   force_https = true
-  # Webhook deliveries must not wait on a cold start, and a triage run continues
-  # in a background task after the 200 — a stopped machine would drop it.
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   min_machines_running = 1
 
   [[http_service.checks]]
-    path = "/healthz"
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "20s"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    path = '/healthz'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"                # ripgrep over ~29MB of corpus plus the agent loop
-  cpu_kind = "shared"
+  size = 'shared-cpu-1x'
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
