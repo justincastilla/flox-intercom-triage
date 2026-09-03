@@ -88,6 +88,13 @@ async def lifespan(app: FastAPI):
     )
     log.info("source repos: %s", repos.heads() or "(none)")
 
+    # Tool schemas are built per triage run, so a schema error would otherwise
+    # surface on the first real ticket — a green deploy with a service that
+    # fails every request. Build them once here and refuse to start instead.
+    from .triage import _build_tools
+
+    _build_tools(_state["intercom"], {})
+
     # A search root that does not exist yields zero doc sources with no error —
     # the failure mode looks like "retrieval is mediocre", not like a bug. This
     # bit in production when DOC_ROOTS was imported from a laptop .env.

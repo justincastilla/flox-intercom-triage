@@ -1,6 +1,10 @@
 """The triage agent: read the ticket, search, and produce a brief for the teammate."""
 
-from __future__ import annotations
+# No `from __future__ import annotations` here on purpose: it turns every
+# annotation into a string, and @beta_tool's schema generation resolves
+# `brief: Brief` against a namespace that does not contain nested-function
+# locals — pydantic 2.11 raises NameError. Python 3.12 evaluates `X | None`
+# natively, so nothing here needs the import.
 
 import json
 import logging
