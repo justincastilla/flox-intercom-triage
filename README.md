@@ -113,8 +113,12 @@ Intake labels are matched prefix-tolerantly in both directions, because the same
 Messenger button reaches the API as both "Question about Flox for my company" and
 "Question about Flox for my company (paid customers, pricing, enterprise)".
 
-Storage is in-memory, so running more than one worker will double-post. Move
-`_briefed` to Redis or Postgres before scaling out.
+**All in-process state assumes ONE machine.** `_briefed` (dedupe) and
+`app/limits.py` (concurrency, cooldown, per-conversation and hourly caps) are
+in-memory. On N machines the spend caps are effectively N times larger and a
+webhook retry landing on a different machine can produce a duplicate brief.
+`min_machines_running` is a floor, not a ceiling — check `flyctl machines list`
+and keep `flyctl scale count 1` until this state moves to Postgres.
 
 **Ticket content is untrusted.** The system prompt instructs the model to treat
 ticket, doc, and past-ticket text as data, and to report embedded instructions in

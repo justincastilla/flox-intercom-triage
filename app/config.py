@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     # Shadow mode is the default: compute the brief, store it, post nothing.
     post_notes: bool = False
     min_confidence: float = 0.55
+
+    # --- Spend limits ---
+    # One brief is ~14 sequential Opus calls; the Messenger is public.
+    max_concurrent_triage: int = 3
+    triage_queue_timeout_seconds: int = 240
+    conversation_cooldown_seconds: int = 120
+    max_briefs_per_conversation: int = 5
+    max_triage_runs_per_hour: int = 40
     # Also honour the agent's own judgement that a note would add nothing.
     require_worth_posting: bool = True
     brief_log_path: str = "briefs.jsonl"

@@ -13,7 +13,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
 from .config import settings
-from . import gaps, intake, llms, repos, store
+from . import gaps, intake, limits, llms, repos, store
 from .intercom import (
     Intercom,
     awaiting_customer_detail,
@@ -119,6 +119,8 @@ def run_triage(conversation_id: str) -> None:
     posted = False
     skipped: str | None = None
     fingerprint: str | None = None
+    metrics: dict = {}
+    held = False
     started = time.monotonic()
     try:
         conversation = intercom.get_conversation(conversation_id)
@@ -139,7 +141,16 @@ def run_triage(conversation_id: str) -> None:
         if not _claim(conversation_id, fingerprint):
             log.info("%s: already briefed for this customer content", conversation_id)
             return
-        brief = triage(conversation, intercom, _state["anthropic"])
+
+        # Reserved only once we know the ticket is genuinely worth spending on —
+        # after the intake, teammate and dedupe checks, none of which cost money.
+        refused = limits.acquire(conversation_id)
+        if refused:
+            log.warning("%s: triage refused by spend limits (%s)", conversation_id, refused)
+            skipped = f"limit:{refused}"
+            return
+        held = True
+        brief = triage(conversation, intercom, _state["anthropic"], metrics)
         if brief is None:
             log.info("%s: no brief produced", conversation_id)
             skipped = "no_brief"
@@ -171,12 +182,16 @@ def run_triage(conversation_id: str) -> None:
         log.exception("triage failed for %s", conversation_id)
         skipped = skipped or "error"
     finally:
+        if held:
+            limits.release()
         store.record(
             conversation_id, brief, posted,
             skipped_reason=skipped,
             repo_heads=repos.heads(),
             duration_ms=int((time.monotonic() - started) * 1000),
             fingerprint=fingerprint,
+            input_tokens=metrics.get("input_tokens"),
+            output_tokens=metrics.get("output_tokens"),
         )
         if brief is not None and brief.doc_gaps:
             try:
@@ -187,7 +202,7 @@ def run_triage(conversation_id: str) -> None:
 
 @app.get("/healthz")
 def healthz() -> dict:
-    return {"ok": True, "post_notes": settings.post_notes}
+    return {"ok": True, "post_notes": settings.post_notes, "limits": limits.snapshot()}
 
 
 @app.get("/reports/doc-gaps.md", response_class=PlainTextResponse)

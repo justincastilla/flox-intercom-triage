@@ -34,8 +34,13 @@ CREATE TABLE IF NOT EXISTS briefs (
     repo_heads        JSONB,
     model             TEXT,
     duration_ms       INTEGER,
-    fingerprint       TEXT
+    fingerprint       TEXT,
+    input_tokens      INTEGER,
+    output_tokens     INTEGER
 );
+-- Added after the table shipped; CREATE TABLE IF NOT EXISTS will not add them.
+ALTER TABLE briefs ADD COLUMN IF NOT EXISTS input_tokens INTEGER;
+ALTER TABLE briefs ADD COLUMN IF NOT EXISTS output_tokens INTEGER;
 CREATE INDEX IF NOT EXISTS briefs_conversation_idx ON briefs (conversation_id);
 CREATE INDEX IF NOT EXISTS briefs_created_idx ON briefs (created_at DESC);
 
@@ -88,6 +93,8 @@ def record(
     repo_heads: dict[str, str] | None = None,
     duration_ms: int | None = None,
     fingerprint: str | None = None,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
 ) -> int | None:
     """Persist one triage outcome. Returns the brief row id, when there is one."""
     payload = json.loads(brief.model_dump_json()) if brief is not None else None
@@ -97,7 +104,8 @@ def record(
             fh.write(json.dumps({
                 "conversation_id": conversation_id, "posted": posted,
                 "skipped_reason": skipped_reason, "repo_heads": repo_heads,
-                "duration_ms": duration_ms, "brief": payload,
+                "duration_ms": duration_ms, "input_tokens": input_tokens,
+                "output_tokens": output_tokens, "brief": payload,
             }) + "\n")
         return None
 
@@ -106,8 +114,9 @@ def record(
             row = conn.execute(
                 """INSERT INTO briefs (conversation_id, posted, skipped_reason, confidence,
                        worth_posting, suggested_team, summary, customer_context, draft_reply,
-                       handling_notes, sources, repo_heads, model, duration_ms, fingerprint)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                       handling_notes, sources, repo_heads, model, duration_ms, fingerprint,
+                       input_tokens, output_tokens)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                 (
                     conversation_id, posted, skipped_reason,
                     payload and payload.get("confidence"),
@@ -120,6 +129,7 @@ def record(
                     json.dumps(payload.get("sources")) if payload else None,
                     json.dumps(repo_heads or {}),
                     settings.triage_model, duration_ms, fingerprint,
+                    input_tokens, output_tokens,
                 ),
             ).fetchone()
             brief_id = row[0]

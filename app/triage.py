@@ -207,8 +207,18 @@ def _build_tools(intercom: Intercom, sink: dict):
     return [search_past_tickets, read_ticket, search_docs, read_doc, submit_brief]
 
 
-def triage(conversation: dict, intercom: Intercom, client: anthropic.Anthropic) -> Brief | None:
-    """Run the agent over one conversation. Returns None if it produced no brief."""
+def triage(
+    conversation: dict,
+    intercom: Intercom,
+    client: anthropic.Anthropic,
+    metrics: dict | None = None,
+) -> Brief | None:
+    """Run the agent over one conversation. Returns None if it produced no brief.
+
+    `metrics`, when given, is filled with token counts for the whole run — the
+    only way to know what a brief actually costs, and what the spend limits in
+    app/limits.py should be set to.
+    """
     parts = transcript(conversation)
     ticket_text = "\n\n".join(f"[{p['type']}] {p['author']}: {p['body']}" for p in parts)
     contact_ids = [c.get("id") for c in (conversation.get("contacts") or {}).get("contacts", [])]
@@ -233,7 +243,12 @@ def triage(conversation: dict, intercom: Intercom, client: anthropic.Anthropic) 
         messages=[{"role": "user", "content": prompt}],
     )
 
+    tokens_in = tokens_out = 0
     for message in runner:
+        usage = getattr(message, "usage", None)
+        if usage is not None:
+            tokens_in += getattr(usage, "input_tokens", 0) or 0
+            tokens_out += getattr(usage, "output_tokens", 0) or 0
         for block in message.content:
             if block.type == "tool_use":
                 log.info("tool: %s %s", block.name, json.dumps(block.input)[:160])
@@ -242,6 +257,10 @@ def triage(conversation: dict, intercom: Intercom, client: anthropic.Anthropic) 
             return None
         if sink.get("brief") is not None:
             break
+
+    if metrics is not None:
+        metrics["input_tokens"] = tokens_in
+        metrics["output_tokens"] = tokens_out
 
     brief = sink.get("brief")
     if brief is None:
