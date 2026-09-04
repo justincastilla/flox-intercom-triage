@@ -57,6 +57,23 @@ Then in Developer Hub → your app → Configure → Webhooks, point
 Read conversations · Write conversations · Read admins · Read articles.
 Notes post as the workspace Operator bot, resolved at startup from `GET /admins`.
 
+## Triggering triage by hand
+
+A teammate types `/gnome` in an internal note. Intercom fires
+`conversation.admin.noted`, and the note is re-run on demand.
+
+An explicit request bypasses the intake check, the teammate-has-replied guard, the
+dedupe fingerprint, the cooldown, shadow mode and the confidence gates — a command
+that silently does nothing reads as broken. It does **not** bypass the concurrency
+or hourly caps: a teammate can start a spend runaway as easily as a customer.
+
+Only notes authored by an `admin` count. Our own notes are posted by the Operator
+bot, so a note we write cannot re-trigger us.
+
+Cost note: subscribing this topic means every internal note by any teammate
+delivers a webhook and costs one `GET /conversations/{id}` to inspect. Cheap at
+this volume; read the note body from the webhook payload instead if it matters.
+
 ## Shadow mode
 
 `POST_NOTES=false` is the default. Run it against real traffic for a week and

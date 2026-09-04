@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     conversation_cooldown_seconds: int = 120
     max_briefs_per_conversation: int = 5
     max_triage_runs_per_hour: int = 40
+
+    # Typing this in an internal note re-runs triage on demand. An explicit human
+    # request bypasses shadow mode and the confidence gates — a command that
+    # silently does nothing reads as broken.
+    triage_command: str = "/gnome"
     # Also honour the agent's own judgement that a note would add nothing.
     require_worth_posting: bool = True
     brief_log_path: str = "briefs.jsonl"

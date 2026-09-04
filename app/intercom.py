@@ -217,3 +217,22 @@ def teammate_has_replied(conversation: dict) -> bool:
         if (part.get("author") or {}).get("type") == "admin":
             return True
     return False
+
+
+def latest_teammate_note(conversation: dict) -> str | None:
+    """Body of the most recent internal note written by a human teammate.
+
+    Only `admin` authors count. Our own notes are posted by the Operator bot
+    (author type `bot`), so this cannot see them — which is what stops a note we
+    post from re-triggering us through `conversation.admin.noted`.
+    """
+    latest = None
+    for part in (conversation.get("conversation_parts") or {}).get("conversation_parts", []):
+        if part.get("part_type") != "note":
+            continue
+        if (part.get("author") or {}).get("type") != "admin":
+            continue
+        body = strip_html(part.get("body"))
+        if body:
+            latest = body
+    return latest

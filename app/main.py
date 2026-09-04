@@ -18,6 +18,7 @@ from .intercom import (
     Intercom,
     awaiting_customer_detail,
     customer_fingerprint,
+    latest_teammate_note,
     teammate_has_replied,
     verify_signature,
 )
@@ -27,7 +28,12 @@ from .triage import Brief, triage
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("triage")
 
+# A teammate typing the trigger command in an internal note fires
+# conversation.admin.noted; see run_triage.
+COMMAND_TOPIC = "conversation.admin.noted"
+
 TRIGGER_TOPICS = {
+    COMMAND_TOPIC,
     "conversation.user.created",
     # Messenger flows open with a category line and the real question arrives
     # as a reply minutes later, so creation alone is not enough.
@@ -113,7 +119,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Intercom pre-triage", lifespan=lifespan)
 
 
-def run_triage(conversation_id: str) -> None:
+def run_triage(conversation_id: str, from_note: bool = False) -> None:
     intercom: Intercom = _state["intercom"]
     brief: Brief | None = None
     posted = False
@@ -124,13 +130,23 @@ def run_triage(conversation_id: str) -> None:
     started = time.monotonic()
     try:
         conversation = intercom.get_conversation(conversation_id)
-        if awaiting_customer_detail(conversation, _state["intake_labels"]):
+
+        forced = False
+        if from_note:
+            note = latest_teammate_note(conversation) or ""
+            if settings.triage_command.lower() not in note.lower():
+                return  # an ordinary teammate note, not a request for us
+            forced = True
+            log.info("%s: %s requested by a teammate", conversation_id,
+                     settings.triage_command)
+
+        if not forced and awaiting_customer_detail(conversation, _state["intake_labels"]):
             log.info(
                 "%s: opening is a Messenger intake selection, waiting for the "
                 "customer's question", conversation_id)
             skipped = "awaiting_customer_detail"
             return
-        if teammate_has_replied(conversation):
+        if not forced and teammate_has_replied(conversation):
             log.info(
                 "%s: a teammate has already replied, leaving it to them",
                 conversation_id,
@@ -138,13 +154,13 @@ def run_triage(conversation_id: str) -> None:
             skipped = "teammate_handling"
             return
         fingerprint = customer_fingerprint(conversation)
-        if not _claim(conversation_id, fingerprint):
+        if not forced and not _claim(conversation_id, fingerprint):
             log.info("%s: already briefed for this customer content", conversation_id)
             return
 
         # Reserved only once we know the ticket is genuinely worth spending on —
         # after the intake, teammate and dedupe checks, none of which cost money.
-        refused = limits.acquire(conversation_id)
+        refused = limits.acquire(conversation_id, force=forced)
         if refused:
             log.warning("%s: triage refused by spend limits (%s)", conversation_id, refused)
             skipped = f"limit:{refused}"
@@ -154,6 +170,14 @@ def run_triage(conversation_id: str) -> None:
         if brief is None:
             log.info("%s: no brief produced", conversation_id)
             skipped = "no_brief"
+        elif forced and _state.get("admin_id"):
+            intercom.post_note(
+                conversation_id,
+                _state["admin_id"],
+                note_html(brief, _state.get("app_id"), repos.heads()),
+            )
+            posted = True
+            log.info("%s: note posted (teammate request)", conversation_id)
         elif brief.confidence < settings.min_confidence:
             log.info(
                 "%s: confidence %.2f below threshold, staying quiet",
@@ -242,7 +266,7 @@ async def webhook(
     if not conversation_id:
         return {"ok": True, "skipped": "no conversation id"}
 
-    background.add_task(run_triage, conversation_id)
+    background.add_task(run_triage, conversation_id, topic == COMMAND_TOPIC)
     return {"ok": True, "queued": conversation_id}
 
 

@@ -41,7 +41,7 @@ def _prune(now: float) -> None:
             del _per_conversation[cid]
 
 
-def acquire(conversation_id: str) -> str | None:
+def acquire(conversation_id: str, force: bool = False) -> str | None:
     """Reserve a triage slot. Returns None when allowed, else a refusal reason.
 
     Blocks while at capacity rather than refusing outright: the webhook has
@@ -53,7 +53,10 @@ def acquire(conversation_id: str) -> str | None:
         if len(_hourly) >= settings.max_triage_runs_per_hour:
             return "hourly_cap"
         stamps = _per_conversation.get(conversation_id)
-        if stamps:
+        # A teammate asking explicitly bypasses the cooldown and per-conversation
+        # cap, but never the concurrency or hourly limits — those exist to stop a
+        # spend runaway, which an authenticated teammate can cause just as easily.
+        if stamps and not force:
             if now - stamps[-1] < settings.conversation_cooldown_seconds:
                 return "cooldown"
             if len(stamps) >= settings.max_briefs_per_conversation:
