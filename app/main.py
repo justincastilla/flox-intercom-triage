@@ -28,18 +28,21 @@ from .triage import Brief, triage
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("triage")
 
-# A teammate typing the trigger command in an internal note fires
-# conversation.admin.noted; see run_triage.
+# Triage is deliberately NOT automatic. The Messenger is public, so triaging every
+# customer message means anyone can run up an Opus bill by typing into the widget.
+# Both triggers below require a human to have acted on the ticket first:
+#
+#   conversation.priority.updated — someone read it and judged it real. This is
+#       the lever: it costs nothing to ignore spam, because nobody prioritises it.
+#   conversation.admin.noted      — someone typed the trigger command in a note.
+#
+PRIORITY_TOPIC = "conversation.priority.updated"
 COMMAND_TOPIC = "conversation.admin.noted"
 
-TRIGGER_TOPICS = {
-    COMMAND_TOPIC,
-    "conversation.user.created",
-    # Messenger flows open with a category line and the real question arrives
-    # as a reply minutes later, so creation alone is not enough.
-    "conversation.user.replied",
-    "ticket.created",
-}
+TRIGGER_TOPICS = {PRIORITY_TOPIC, COMMAND_TOPIC}
+
+# Intercom's default. Anything else means a teammate set it deliberately.
+DEFAULT_PRIORITY = "not_priority"
 
 _state: dict = {}
 _briefed: dict[str, str] = {}
@@ -119,7 +122,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Intercom pre-triage", lifespan=lifespan)
 
 
-def run_triage(conversation_id: str, from_note: bool = False) -> None:
+def run_triage(conversation_id: str, topic: str = PRIORITY_TOPIC) -> None:
     intercom: Intercom = _state["intercom"]
     brief: Brief | None = None
     posted = False
@@ -131,36 +134,42 @@ def run_triage(conversation_id: str, from_note: bool = False) -> None:
     try:
         conversation = intercom.get_conversation(conversation_id)
 
-        forced = False
-        if from_note:
+        # Both triggers are deliberate human actions, so they skip the guards that
+        # exist to stop *automatic* re-triage. They differ in one thing: /gnome is
+        # "give me a brief now" and overrides shadow mode, while a priority change
+        # only says "this ticket is real" — it must not start writing notes to live
+        # tickets just because someone triaged their inbox.
+        override_gates = False
+        if topic == COMMAND_TOPIC:
             note = latest_teammate_note(conversation) or ""
             if settings.triage_command.lower() not in note.lower():
                 return  # an ordinary teammate note, not a request for us
-            forced = True
+            override_gates = True
             log.info("%s: %s requested by a teammate", conversation_id,
                      settings.triage_command)
+        elif topic == PRIORITY_TOPIC:
+            priority = conversation.get("priority")
+            if priority == DEFAULT_PRIORITY or priority is None:
+                log.info("%s: priority back to default, nothing to do", conversation_id)
+                skipped = "priority_cleared"
+                return
+            log.info("%s: prioritised (%s), triaging", conversation_id, priority)
 
-        if not forced and awaiting_customer_detail(conversation, _state["intake_labels"]):
+        if awaiting_customer_detail(conversation, _state["intake_labels"]):
             log.info(
                 "%s: opening is a Messenger intake selection, waiting for the "
                 "customer's question", conversation_id)
             skipped = "awaiting_customer_detail"
             return
-        if not forced and teammate_has_replied(conversation):
-            log.info(
-                "%s: a teammate has already replied, leaving it to them",
-                conversation_id,
-            )
-            skipped = "teammate_handling"
-            return
+        # No teammate-replied or fingerprint check here: those guarded against
+        # automatic re-triage, which no longer happens. A human pulling the lever
+        # twice is answered twice — the cooldown in app/limits.py is what stops
+        # that being abused.
         fingerprint = customer_fingerprint(conversation)
-        if not forced and not _claim(conversation_id, fingerprint):
-            log.info("%s: already briefed for this customer content", conversation_id)
-            return
 
         # Reserved only once we know the ticket is genuinely worth spending on —
         # after the intake, teammate and dedupe checks, none of which cost money.
-        refused = limits.acquire(conversation_id, force=forced)
+        refused = limits.acquire(conversation_id, force=override_gates)
         if refused:
             log.warning("%s: triage refused by spend limits (%s)", conversation_id, refused)
             skipped = f"limit:{refused}"
@@ -170,7 +179,7 @@ def run_triage(conversation_id: str, from_note: bool = False) -> None:
         if brief is None:
             log.info("%s: no brief produced", conversation_id)
             skipped = "no_brief"
-        elif forced and _state.get("admin_id"):
+        elif override_gates and _state.get("admin_id"):
             intercom.post_note(
                 conversation_id,
                 _state["admin_id"],
@@ -266,7 +275,7 @@ async def webhook(
     if not conversation_id:
         return {"ok": True, "skipped": "no conversation id"}
 
-    background.add_task(run_triage, conversation_id, topic == COMMAND_TOPIC)
+    background.add_task(run_triage, conversation_id, topic)
     return {"ok": True, "queued": conversation_id}
 
 
