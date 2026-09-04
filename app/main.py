@@ -41,8 +41,10 @@ COMMAND_TOPIC = "conversation.admin.noted"
 
 TRIGGER_TOPICS = {PRIORITY_TOPIC, COMMAND_TOPIC}
 
-# Intercom's default. Anything else means a teammate set it deliberately.
-DEFAULT_PRIORITY = "not_priority"
+# Values that mean "nobody has prioritised this". The API reference documents
+# "not_priority", but a live unprioritised conversation actually comes back as
+# "none" — so match a set, not one string, or an untouched ticket triages.
+UNPRIORITISED = {"", "none", "not_priority", "null"}
 
 _state: dict = {}
 _briefed: dict[str, str] = {}
@@ -148,9 +150,12 @@ def run_triage(conversation_id: str, topic: str = PRIORITY_TOPIC) -> None:
             log.info("%s: %s requested by a teammate", conversation_id,
                      settings.triage_command)
         elif topic == PRIORITY_TOPIC:
-            priority = conversation.get("priority")
-            if priority == DEFAULT_PRIORITY or priority is None:
-                log.info("%s: priority back to default, nothing to do", conversation_id)
+            priority = str(conversation.get("priority") or "").strip().lower()
+            if priority in UNPRIORITISED:
+                log.info(
+                    "%s: priority is %r, not a deliberate escalation — skipping",
+                    conversation_id, priority or "unset",
+                )
                 skipped = "priority_cleared"
                 return
             log.info("%s: prioritised (%s), triaging", conversation_id, priority)
